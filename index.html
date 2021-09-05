@@ -1,0 +1,250 @@
+<html>
+<head>
+<style>
+body{
+	margin:0;
+}
+
+button,input,i,h1{
+	font-size: 3vh;
+	text-align:center;
+}
+#out_img{
+	width:48vh;
+}
+#upload{
+	background-color:red;
+	color:white;
+	border-radius:20%;
+}
+#dbtn{
+	background-color:green;
+	color:white;
+	border-radius:20%;
+}
+</style>
+</head>
+
+<body>
+	<div style="text-align:center">
+					<br>
+		<button id="upload" onclick="upload()">Upload</button>
+					<br>
+		<input type="file" name="image" id="image" onchange="readFile()" hidden>
+					<br>
+		<!--input type='range' min='1' name='output_size' id='output_size' placeholder='Size in KB'  oninput='compress()'><i id='dsize'></i>KB-->
+		<input type='number' min='1' name='output_size' id='output_size' placeholder='Size in KB'  onchange='compress()'><br><i>KB</i>
+				<br><br>
+		<input type='number' id='test_input' onchange='compress()' hidden>
+		<button id='dbtn' onclick='download()' hidden>Download</button>
+				<br><br>
+		<div id='status'></div>
+		<div id='output_kb'></div>
+		<a id='dlink'  hidden download></a>
+		
+	</div>
+	<div id="display"></div>
+	<div style="text-align:center">
+		<canvas  width="" height="" style="border: 1px solid black;" id="canvas" hidden></canvas>
+		<img id='out_img' src=''></img>
+	</div>
+</body>
+<script>
+ var glob_temp;
+ var display = document.getElementById("display");
+ var canvas  = document.getElementById("canvas");
+ var opt;
+ var output_image;
+ var result_size=0;
+ var input_size;
+ var var_input_size;
+ var orientation;
+ var input_file_name;
+ function readFile(){
+	//alert('done');
+	var size = document.getElementById('image').files[0].size;
+	input_file_name = document.getElementById('image').files[0].name;
+	//display.innerHTML = (size/Math.pow(2,10)).toFixed(2)+'KB';
+	//document.getElementById('output_size').value = (size/Math.pow(2,10)).toFixed(2);
+	document.getElementById('output_size').max = (size/Math.pow(2,10)).toFixed(2);
+	document.getElementById('output_size').value=Math.min(document.getElementById('output_size').max,30);
+	compress();
+	
+ }
+
+ function compress() {
+    display.innerHTML = '';
+    document.getElementById('status').innerHTML = '<h1>wait..</h1>';
+    document.getElementById('output_kb').innerHTML='';
+    var file = document.getElementById('image').files[0]
+    var fileName=file.name;
+    var currentImage;
+   // document.getElementById('dsize').innerHTML = document.getElementById('output_size').value;
+    //display.innerHTML = display.innerHTML + '<br>'+fileName+'<br>';
+    getOrientation(file);
+    var reader = new FileReader();
+    reader.onload = function(e){
+			currentImage = e.target.result; //data of the image
+			var img = document.createElement('img');
+			img.src = currentImage;
+			
+			img.onload = function() {
+				
+				var a_r = img.width/img.height;
+				var size_p_px = file.size/(img.width*img.height);
+				opt = file.size/((img.width*img.height)/1.7);
+
+				input_size = document.getElementById('output_size').value*1;
+				var_input_size = input_size;
+				glob_temp = this;
+				/*--------------------------------------------------------------------*/
+				for(var rate=1000;rate>=0.1;rate=rate/2)
+					process(this,a_r,size_p_px,rate);
+
+				/*--------------------------------------------------------------------*/
+				    document.getElementById('status').innerHTML = ''
+				    document.getElementById('out_img').src= output_image;
+				    document.getElementById('dlink').href= output_image;
+				    document.getElementById('output_kb').innerHTML='<h1>Output size= '+result_size+'KB</h1>';
+				    result_size = 0;
+				    document.getElementById('dbtn').hidden = false;
+				//display.innerHTML = display.innerHTML + '<br>'+a_r+'<br>'+target_size+'<br>'+size_p_px+'<br>'+target_px+'<br>'+canvas.width+'x'+canvas.height+'<br>'+opt+'<br>';
+				    //download(); //////remove this later
+			};
+			
+    };
+    reader.readAsDataURL(file);  //will trigger reader.onload
+
+ }
+
+ function download(){
+	var dn = document.getElementById('dlink');
+	dn.download=input_file_name;
+	if((dn.href).localeCompare('')!=0)
+		dn.click();
+		
+ }
+ function upload(){
+	document.getElementById('output_kb').innerHTML='';
+	document.getElementById('out_img').src = '';
+	document.getElementById('output_size').value =0;
+	document.getElementById('image').click();
+	}
+ function process(img,a_r,size_p_px,rate){
+		//alert(rate);
+		var left=0,right=0,prev_val=0;
+		while(Math.abs(result_size-input_size)>=0.0001) {
+		 if (var_input_size<prev_val){
+				right = 0
+				left=1
+			}
+			else{
+				right = 1
+			}
+			if(left==1&&right==1) {
+				//console.log('Done',var_input_size);
+				break;
+			}			
+		    prev_val = var_input_size;
+
+		
+
+		    var target_size = var_input_size*Math.pow(2,10); // in bytes
+
+		    var target_px = target_size/size_p_px;
+		    //var target_px = 1200;
+		
+		    canvas.height = Math.sqrt(target_px/a_r);
+		    canvas.width =  a_r*canvas.height;
+		    
+		    if(orientation>4){
+			//alert('entered');
+			var temp = canvas.height;
+			canvas.height = canvas.width;
+			canvas.width = temp;
+			var ctx = canvas.getContext('2d'); 
+			ctx.translate(0,canvas.height);  //move the canvas drawing board to bottom
+			ctx.rotate(-90*Math.PI/180.0);   //rotate the drawing board by -90 degree i.e. anti clock
+			ctx.drawImage(img,0,0,canvas.height,canvas.width); //sx,sy,sw,sh,dx,dy,dw,dh  //interchanged canvas height and width
+
+
+		    }
+		    else {
+		    	var ctx = canvas.getContext('2d');
+		  	ctx.drawImage(img,0,0,canvas.width,canvas.height); //sx,sy,sw,sh,dx,dy,dw,dh
+		    }
+		
+		    
+		    output_image = canvas.toDataURL('image/jpeg',opt);
+		    result_size = (output_image.length*0.7499765025190587)/1024;
+		    //opt = (result_size/((canvas.width*canvas.height)/1.7))*1024;
+		    //alert(opt);
+		    //console.log((target_px/result_size)+'%');
+
+		    //console.log(var_input_size);
+		    if(result_size<input_size)
+		    	var_input_size = (var_input_size*1)+rate;
+		    else 
+			var_input_size = (var_input_size*1)-rate;
+		    
+		}
+ }
+ function toPdf(b64){
+
+ }
+ function getOrientation(file) {
+    
+    var reader = new FileReader();
+    reader.onload = function(e) {
+
+        var view = new DataView(e.target.result);
+        if (view.getUint16(0, false) != 0xFFD8)
+        {
+	    orientation = -2;
+            return -2;
+        }
+        var length = view.byteLength, offset = 2;
+        while (offset < length) 
+        {
+            if (view.getUint16(offset+2, false) <= 8) {orientation =-1; return -1;}
+            var marker = view.getUint16(offset, false);
+            offset += 2;
+            if (marker == 0xFFE1) 
+            {
+                if (view.getUint32(offset += 2, false) != 0x45786966) 
+                {
+		    orientation = -1;
+                    return -1;
+                }
+
+                var little = view.getUint16(offset += 6, false) == 0x4949;
+                offset += view.getUint32(offset + 4, little);
+                var tags = view.getUint16(offset, little);
+                offset += 2;
+                for (var i = 0; i < tags; i++)
+                {
+                    if (view.getUint16(offset + (i * 12), little) == 0x0112)
+                    {
+			orientation = view.getUint16(offset + (i * 12) + 8, little);
+                        return view.getUint16(offset + (i * 12) + 8, little);
+                    }
+                }
+            }
+            else if ((marker & 0xFF00) != 0xFF00)
+            {
+                break;
+            }
+            else
+            { 
+                offset += view.getUint16(offset, false);
+            }
+        }
+	orientation = -1;
+        return -1;
+    };
+    reader.readAsArrayBuffer(file);
+ }
+
+
+</script>
+</html>
