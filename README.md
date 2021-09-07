@@ -1,6 +1,6 @@
 
 <p align="center">
-  <a align="center" href="https://bkalita-git.github.io/img_red"> <img src="https://icon-library.com/images/try-icon/try-icon-8.jpg"></a>
+  <ahref="https://bkalita-git.github.io/img_red"> <img src="https://icon-library.com/images/try-icon/try-icon-8.jpg"></a>
 </p>
 <br>
 
