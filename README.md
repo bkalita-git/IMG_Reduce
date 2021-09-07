@@ -1,3 +1,6 @@
+[![TRY it](https://icon-library.com/images/try-icon/try-icon-8.jpg)](https://bkalita-git.github.io/img_red)
+
+<br>
 x is the original resolution
 say 0.17753379642 byte per pixel
 ((165kb*2^10 = target byte)/0.17753379642 = output pixel)/x)*100
